@@ -99,8 +99,7 @@ def do_particles():
     bbox = np.array([[0.0, 128.0], [0.0, 128.0], [0.0, 128.0]])
     data["particle_mass"] *= 2.2023338912587828e+43 # Convert to grams
     ds_particles = load_particles(data, 2.0604661199638546e+24, bbox=bbox)
-    center = np.array([0.492470,  0.533444,  0.476942]) 
-    center *= 128
+    center = 128 * np.array([0.492470,  0.533444,  0.476942]) 
     ds_particles.add_particle_filter("finest")
     particle_vector_functions("all",
                               ["particle_position_%s" % ax for ax in 'xyz'],
@@ -207,9 +206,9 @@ def process_dataset(ds, center):
     if os.path.exists("./images/%s_MergerHalos.out" % ds) == False:
         omega_matter = 0.272
         halos = HaloFinder(ds, threshold = omega_matter*360)
-        field = ("deposit", "finest_density")
         halos.write_out("./images/%s_MergerHalos.out" % ds)
         
+        field = ("deposit", "finest_density")
         source = ds.h.region(center, center - (w[0]/ds[w[1]])/2.0, center + (w[0]/ds[w[1]])/2.0)
         proj = ds.h.proj(field, "z", weight_field = field, data_source = source)
         pw = proj.to_pw(fields = [field], center = center, width = w)
