@@ -42,6 +42,7 @@ def register_output_function(func):
 def do_art2():
     ds_art2 = load("./A11QR1/s11Qzm1h2_a1.0000.art")
     center = 128 * np.array([0.492470,  0.533444,  0.476942]) 
+    ds_art2.add_particle_filter("finest")
     process_dataset(ds_art2, center)
     return ds_art2
 
@@ -49,20 +50,22 @@ def do_art2():
 def do_enzo():
     ds_enzo = load("./DD0040/data0040")
     center = np.array([ 0.49297869, 0.50791068, 0.50727271])
+    ds_enzo.add_particle_filter("finest")
     process_dataset(ds_enzo, center)
-
 
 @register_output_function
 def do_ramses():
     ds_ramses = load("./output_00101/info_00101.txt")
     center = np.array([ 0.48598457, 0.52665735, 0.48984628])
     #center = np.array([ 0.4861241, 0.52643877, 0.49013741])
+    ds_ramses.add_particle_filter("finest")
     process_dataset(ds_ramses, center)
 
 @register_output_function
 def do_gadget():
     ds_gadget = GadgetStaticOutput("./snapshot_010", unit_base = {"mpchcm": 1.0})
     center = np.array([ 29.75540543, 32.12417221, 28.28912735])
+    ds_gadget.add_particle_filter("finest")
     process_dataset(ds_gadget, center)
 
 @register_output_function
@@ -74,6 +77,7 @@ def do_gasoline():
                                     unit_base = {'mpchcm': 1.0/60.0})
     center = np.array([-0.014738, 0.026979, -0.010535])
     #center = np.array([-0.01477163, 0.02694199, -0.0105199])
+    ds_gasoline.add_particle_filter("finest")
     process_dataset(ds_gasoline, center)
 
 @register_output_function
@@ -85,6 +89,7 @@ def do_pkdgrav():
                                    cosmology_parameters = cosmology_parameters,
                                    unit_base = {'mpchcm': 1.0/60.0})
     center = np.array([-0.01434195, 0.027505, -0.01086525])
+    ds_pkdgrav.add_particle_filter("finest")
     process_dataset(ds_pkdgrav, center)
 
 @register_output_function
@@ -96,6 +101,17 @@ def do_particles():
     ds_particles = load_particles(data, 2.0604661199638546e+24, bbox=bbox)
     center = np.array([0.492470,  0.533444,  0.476942]) 
     center *= 128
+    ds_particles.add_particle_filter("finest")
+    particle_vector_functions("all",
+                              ["particle_position_%s" % ax for ax in 'xyz'],
+                              ["particle_velocity_%s" % ax for ax in 'xyz'],
+                              StreamFieldInfo)
+    particle_vector_functions("finest",
+                              ["particle_position_%s" % ax for ax in 'xyz'],
+                              ["particle_velocity_%s" % ax for ax in 'xyz'],
+                              StreamFieldInfo)
+    particle_deposition_functions("all", "Coordinates", "particle_mass", StreamFieldInfo)
+    particle_deposition_functions("finest", "Coordinates", "particle_mass", StreamFieldInfo)
     process_dataset(ds_particles, center)
 
 def process_dataset(ds, center):
@@ -103,7 +119,6 @@ def process_dataset(ds, center):
     #=======================
     #  [1] TOTAL MASS
     #=======================
-    ds.add_particle_filter("finest")
     sp = ds.h.sphere(center, (1.0, 'mpc'))
     total_particle_mass = sp.quantities["TotalQuantity"]( ("all","ParticleMassMsun") )[0]
     print "Total particle mass within a radius of 1 Mpc of the center: %0.3e Msun" \
@@ -144,12 +159,6 @@ def process_dataset(ds, center):
     plt.imshow(proj.swapaxes(0,1), interpolation='nearest', origin='lower',
                norm = norm, extent = [-0.5*(w[0]/ds[w[1]]), 0.5*(w[0]/ds[w[1]]), 
                                        -0.5*(w[0]/ds[w[1]]), 0.5*(w[0]/ds[w[1]])])
-    plt.xlabel(r"$%d\/ \mathrm{Mpc} / h \/(\mathrm{comoving})$" \
-                   % round(ds.units["mpc"]/0.702))
-                   # % round(ds.units["mpch"]))
-    plt.ylabel(r"$%d\/ \mathrm{Mpc} / h \/(\mathrm{comoving})$" \
-                   % round(ds.units["mpc"]/0.702))
-                   # % round(ds.units["mpch"]))
     cb = plt.colorbar()
     cb.set_label(r"$\mathrm{Density}\/\/[\mathrm{g}/\mathrm{cm}^3]$")
     plt.savefig("./images/%s_%s.png" % (ds, field[1]), dpi=150, bbox_inches='tight', \
