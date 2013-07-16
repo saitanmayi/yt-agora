@@ -16,7 +16,7 @@ if not os.path.isdir("images"): os.makedirs("images")
 import h5py
 from yt.config import ytcfg; ytcfg["yt","loglevel"] = "20"
 from yt.mods import *
-from yt.utilities.physical_constants import kpc_per_cm
+import yt.utilities.physical_constants as phys_const
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize
 from yt.data_objects.particle_filters import \
@@ -40,7 +40,7 @@ def register_output_function(func):
 
 @register_output_function
 def do_art2():
-    ds_art2 = load("A11QR1/s11Qzm1h2_a1.0000.art")
+    ds_art2 = load("./A11QR1/s11Qzm1h2_a1.0000.art")
     center = 128 * np.array([0.492470,  0.533444,  0.476942]) 
     process_dataset(ds_art2, center)
     return ds_art2
@@ -56,6 +56,7 @@ def do_enzo():
 def do_ramses():
     ds_ramses = load("./output_00101/info_00101.txt")
     center = np.array([ 0.48598457, 0.52665735, 0.48984628])
+    #center = np.array([ 0.4861241, 0.52643877, 0.49013741])
     process_dataset(ds_ramses, center)
 
 @register_output_function
@@ -166,10 +167,12 @@ def process_dataset(ds, center):
                            inner_radius, sphere_radius, end_collect = True)
     prof.add_fields([("all","ParticleMassMsun")],
                     weight = None, accumulation=False)
-    prof["AverageDMDensity"] = prof[("all","ParticleMassMsun")] * 6.77e-32
+    prof["AverageDMDensity"] = prof[("all","ParticleMassMsun")] * \
+                               phys_const.mass_sun_cgs / (phys_const.cm_per_kpc)**3 # g/cm^3
     shell_volume = prof["ParticleRadiuskpc"]**3.0 * (4.0/3.0)*np.pi
     shell_volume[1:] -= shell_volume[0:-1]
     prof["AverageDMDensity"] /= shell_volume
+
     plt.clf()
     plt.loglog(prof["ParticleRadiuskpc"], prof["AverageDMDensity"], '-k')
     plt.xlabel(r"$\mathrm{Radius}\/\/[\mathrm{kpc}]$")
