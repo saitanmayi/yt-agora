@@ -177,8 +177,9 @@ def process_dataset(ds, center):
                     weight = None, accumulation=False)
     prof["AverageDMDensity"] = prof[("all","ParticleMassMsun")] * \
                                phys_const.mass_sun_cgs / (phys_const.cm_per_kpc)**3 # g/cm^3
-    shell_volume = prof["ParticleRadiuskpc"]**3.0 * (4.0/3.0)*np.pi
-    shell_volume[1:] -= shell_volume[0:-1]
+    shell_volume_temp = prof["ParticleRadiuskpc"]**3.0 * (4.0/3.0)*np.pi
+    shell_volume      = prof["ParticleRadiuskpc"]**3.0 * (4.0/3.0)*np.pi
+    shell_volume[1:] -= shell_volume_temp[0:-1]
     prof["AverageDMDensity"] /= shell_volume
 
     plt.clf()
