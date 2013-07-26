@@ -42,7 +42,7 @@ def register_output_function(func):
 def do_art2():
     ds_art2 = load("./A11QR1/s11Qzm1h2_a1.0000.art")
     center = 128 * np.array([0.492470,  0.533444,  0.476942]) 
-    #ds_art2 = ARTIOStaticOutput("../RUN.4R4/agora.nb_a1.0018.art")
+    #ds_art2 = load("../RUN.4R4/agora.nb_a1.0018.art")
     #center = np.array([63.05873108, 68.22652435, 61.08340073])
     ds_art2.add_particle_filter("finest")
     process_dataset(ds_art2, center)
@@ -146,8 +146,10 @@ def process_dataset(ds, center):
     #=======================
     w = (1.0/0.702, "mpc")
     #w = (1.0, "mpch")
+    #w = (0.2/0.702, "mpc")
     axis = 2
     colorbounds = (1e-32, 1e-25)
+    #colorbounds = (1e-54, 1e-48)
     res = [1024] * 3
     res[axis] = 16
 
@@ -157,6 +159,7 @@ def process_dataset(ds, center):
 
     field = ("deposit", "all_cic")
     num = (source[field] * source[field]).sum(axis=axis)
+    #num = (source[field] * source[field] * source[field]).sum(axis=axis)
     num *= (RE[axis] - LE[axis])*ds['cm'] # dl
     den = (source[field]).sum(axis=axis)
     den *= (RE[axis] - LE[axis])*ds['cm'] # dl
