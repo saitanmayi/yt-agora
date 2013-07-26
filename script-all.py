@@ -63,7 +63,9 @@ def do_ramses():
 
 @register_output_function
 def do_gadget():
-    ds_gadget = GadgetStaticOutput("./snapshot_010", unit_base = {"mpchcm": 1.0})
+    ds_gadget = GadgetStaticOutput("./snapshot_010",
+                                  unit_base = {"mpchcm": 1.0},
+                                  n_ref = NREF)
     center = np.array([ 29.75540543, 32.12417221, 28.28912735])
     ds_gadget.add_particle_filter("finest")
     process_dataset(ds_gadget, center)
@@ -74,7 +76,8 @@ def do_gasoline():
                                 omega_matter = 0.272, hubble_constant = 0.702)
     ds_gasoline = TipsyStaticOutput("./agora_1e11.00400",
                                     cosmology_parameters = cosmology_parameters,
-                                    unit_base = {'mpchcm': 1.0/60.0})
+                                    unit_base = {'mpchcm': 1.0/60.0},
+                                    n_ref = NREF)
     center = np.array([-0.014738, 0.026979, -0.010535])
     #center = np.array([-0.01477163, 0.02694199, -0.0105199])
     ds_gasoline.add_particle_filter("finest")
@@ -87,7 +90,8 @@ def do_pkdgrav():
     ds_pkdgrav = TipsyStaticOutput("./halo1e11_run1.00400", endian="<",
                                    field_dtypes = {"Coordinates": "d"},
                                    cosmology_parameters = cosmology_parameters,
-                                   unit_base = {'mpchcm': 1.0/60.0})
+                                   unit_base = {'mpchcm': 1.0/60.0},
+                                   n_ref = NREF)
     center = np.array([-0.01434195, 0.027505, -0.01086525])
     ds_pkdgrav.add_particle_filter("finest")
     process_dataset(ds_pkdgrav, center)
@@ -98,7 +102,8 @@ def do_particles():
     data = dict((k, f[k][:].astype("float64")) for k in f)
     bbox = np.array([[0.0, 128.0], [0.0, 128.0], [0.0, 128.0]])
     data["particle_mass"] *= 2.2023338912587828e+43 # Convert to grams
-    ds_particles = load_particles(data, 2.0604661199638546e+24, bbox=bbox)
+    ds_particles = load_particles(data, 2.0604661199638546e+24, bbox=bbox,
+                                  n_ref = NREF)
     center = 128 * np.array([0.492470,  0.533444,  0.476942]) 
     ds_particles.add_particle_filter("finest")
     particle_vector_functions("all",
@@ -226,6 +231,8 @@ if __name__ == '__main__':
                 action = "append_const",
                 const = output_type,
                 )
+    parser.add_argument("--nref", dest="n_ref", action="store", type=int,
+                        default = 64)
     opts = parser.parse_args(unparsed_args)
     if opts.run_all:
         outputs = output_functions.keys()
@@ -234,6 +241,7 @@ if __name__ == '__main__':
     if outputs is None:
         parser.error("No outputs supplied.")
         sys.exit()
+    NREF = opts.n_ref
     for output in sorted(outputs):  
         mylog.info("Examining %s", output)
         output_functions[output]()
