@@ -82,6 +82,7 @@ def do_gasoline():
                                     n_ref = NREF)
     center = np.array([-0.014738, 0.026979, -0.010535])
     #center = np.array([-0.01477163, 0.02694199, -0.0105199])
+    #center = np.array([-0.01458640303, 0.02661746740, -0.01054253429])
     ds_gasoline.add_particle_filter("finest")
     process_dataset(ds_gasoline, center)
 
