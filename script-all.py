@@ -44,6 +44,8 @@ def do_art2():
     center = 128 * np.array([0.492470,  0.533444,  0.476942]) 
     #ds_art2 = load("../RUN.4R4/agora.nb_a1.0018.art")
     #center = np.array([63.05873108, 68.22652435, 61.08340073])
+    #ds_art2 = load("../4r4hrc3/agora.nb_a1.0015.art")
+    #center = np.array([62.18081072, 67.33272545, 62.77661086])
     ds_art2.add_particle_filter("finest")
     process_dataset(ds_art2, center)
     return ds_art2
