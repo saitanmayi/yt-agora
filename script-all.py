@@ -69,6 +69,7 @@ def do_gadget():
                                   unit_base = {"mpchcm": 1.0},
                                   n_ref = NREF)
     center = np.array([ 29.75540543, 32.12417221, 28.28912735])
+    #center = np.array([ 29.74740791, 32.12660217, 28.30067253])
     ds_gadget.add_particle_filter("finest")
     process_dataset(ds_gadget, center)
 
