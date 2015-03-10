@@ -1,1 +1,0 @@
-/project/projectdirs/agora/.AGORA_PIPE_INSTALL/scripts/run_rockstar.py
