@@ -1,7 +1,7 @@
 '''
-Generate .fits file containing the simulation data in a format that
-Sunrise uderstands. Also generate the configuration files required 
-to run Sunrise. 
+Genarate the cameras to use in Sunrise and make projection plots
+of the data for some of these cameras. Then export the data within
+the fov to a FITS file in a format that Sunrise uderstands.
 '''
 import os, sys, argparse
 from glob import glob
@@ -9,11 +9,9 @@ import numpy as np
 from collections import OrderedDict
 
 if __name__ != "__main__":
-    from yt.analysis_modules.sunrise_export import sunrise_exporter
+    from yt.analysis_modules.sunrise_export import sunrise_octree_exporter
     from yt.analysis_modules.halo_finding.halo_objects import RockstarHaloList 
     yt.enable_parallelism()
-
-import pdb
 
 
 def parse():
@@ -22,9 +20,9 @@ def parse():
     ''' 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='''\
-                                Generate .fits file containing the simulation data in a format that
-                                Sunrise uderstands. Also generate the configuration files required 
-                                to run Sunrise.
+                                Genarate the cameras to use in Sunrise and make projection plots
+                                of the data for some of these cameras. Then export the data within
+                                the fov to a FITS file in a format that Sunrise uderstands.
                                 ''')
  
     parser.add_argument('sim_dirs', nargs='+', help='Simulation directories to be analyzed.')
@@ -53,8 +51,12 @@ def parse():
     parser.add_argument('--cams_to_plot', nargs='+', default=['face','edge','45'],
                         help='Cameras for which to make slice and projection plots ')
 
-    parser.add_argument('--out_dir',default='sim_dir/analysis/sunrise_input/',
-                        help='Directory where the output will be placed.') 
+    parser.add_argument( '--max_level', default=None, type=int,
+                         help='Max level to refine when exporting the oct-tree structure.')
+
+    parser.add_argument('--out_dir',default='sim_dir/analysis/sunrise_analysis/',
+                        help='Directory where the output will be placed. A subdirectory will be created '\
+                            'for each snapshot') 
 
     parser.add_argument('--rockstar_out_dir', default='sim_dir/analysis/rockstar_output/',
                         help='Directory where to find the rockstar output, used to annotate halos '\
@@ -285,39 +287,42 @@ def plot_gas(prefix, ds, center, cameras, cams_to_plot=['face','edge','45']):
     p.set_unit('density', 'Msun/kpc**3')
     p.set_unit('cell_mass', 'Msun')
     if yt.is_root:
-        p.save(prefix+'_phase_Temp_GasMass')
+        p.save(prefix)
     
     p = yt.PhasePlot(sph, "density", "Temperature", "MetalMass", weight_field=None)
     p.set_unit('density', 'Msun/kpc**3')
     if yt.is_root:
-        p.save(prefix+'_phase_Temp_MetalMass')
+        p.save(prefix)
     
 
-def export_fits(ds, center, export_radius, prefix, star_particles):
+def export_fits(ds, center, export_radius, prefix, star_particles, max_level=None):
     '''
     Convert the contents of a dataset to a FITS file format that Sunrise
     understands.
     '''
 
-    print "\nExporting data to FITS for Sunrise"
+    print "\nExporting data in %s to FITS for Sunrise"%ds.parameter_filename.split('/')[-1]
 
     filename = prefix+'.fits'
     center = center.in_units('kpc')
     width = export_radius.in_units('kpc')
     info = {}
-      
+
     fle, fre, ile, ire, nrefined, nleafs, nstars = \
-        sunrise_exporter.export_to_sunrise(ds, filename, star_particles, 
-                                           center, width)
+        sunrise_octree_exporter.export_to_sunrise(ds, filename, star_particles, 
+                                                  center, width, max_level=max_level)
+    info['export_center']=center.value
+    info['export_radius']=width.value
     info['export_ile']=ile
     info['export_ire']=ire
     info['export_fle']=fle
     info['export_fre']=fre
+    info['export_max_level']=max_level
     info['export_nrefined']=nrefined
     info['export_nleafs']=nleafs
     info['export_nstars']=nstars
 
-    print "Succefully generated FITS for Sunrise"
+    print "Succefully generated FITS for snapshot %s"%ds.parameter_filename.split('/')[-1]
     print info,'\n'
     return info
 
@@ -359,7 +364,7 @@ if __name__ == "__main__":
     args = parse()
 
     import yt
-    from yt.analysis_modules.sunrise_export import sunrise_exporter
+    from yt.analysis_modules.sunrise_export import sunrise_octree_exporter
     from yt.analysis_modules.halo_finding.halo_objects import RockstarHaloList  
     yt.enable_parallelism()
     
@@ -394,6 +399,7 @@ if __name__ == "__main__":
     cam_dist, cam_fov = float(args['distance']), float(args['fov'])  
     star_particles, dm_particles = args['star_particles'], args['dm_particles']
     cams_to_plot = args['cams_to_plot']
+    max_level = args['max_level']
     no_plots, no_export = args['no_plots'], args['no_export']
        
     # Loop over simulation directories    
@@ -449,27 +455,31 @@ if __name__ == "__main__":
             # Write cameras to file
             scale_dir = out_dir+'a'+str(scale)+'/'
             prefix = galprops_file.replace('galaxy_props.npy', 'a'+str(scale)).split('/')[-1] 
-            prefix = scale_dir+prefix
             if yt.is_root():
                 if not os.path.exists(scale_dir): os.makedirs(scale_dir)
-                write_cameras(prefix, cameras)
+                write_cameras(scale_dir+prefix, cameras)
 
             # Make plots
             if not no_plots:
+                print "\nGenerating plots for snapshot %s"%ds.parameter_filename.split('/')[-1]
+                plots_dir = scale_dir+'/yt_plots/'
+                if yt.is_root():
+                    if not os.path.exists(plots_dir): os.makedirs(plots_dir)
                 gal_center = ds.arr(galprops['stars_hist_center'][idx], 'kpc')
                 halo_file = get_halo_file(rockstar_out_dir, scale)
-                plot_particles(prefix, ds, gal_center, cameras, 
+                plot_particles(plots_dir+prefix, ds, gal_center, cameras, 
                                dm_particles=dm_particles, 
                                star_particles=star_particles,
                                halo_file=halo_file,
                                cams_to_plot=cams_to_plot)
-                plot_gas(prefix, ds, gal_center, cameras, cams_to_plot=cams_to_plot)
+                plot_gas(plots_dir+prefix, ds, gal_center, cameras, cams_to_plot=cams_to_plot)
+                print "Succefully generated plots for snapshot %s\n"%ds.parameter_filename.split('/')[-1]
 
 
         # Send one snapshots to each procesor to export 
         if not no_export:
-#            for ds in ts.piter():
-            for ds in reversed(ts):
+            for ds in ts.piter():
+#            for ds in reversed(ts): # comment line above and uncomment this to debug on latest snaps
 
                 scale = round(1.0/(ds.current_redshift+1.0),4)
                 if scale not in galprops['scale']:
@@ -478,11 +488,15 @@ if __name__ == "__main__":
                 idx = np.argwhere(galprops['scale'] == scale)[0][0]
                 scale_dir = out_dir+'a'+str(scale)+'/'
                 prefix = galprops_file.replace('galaxy_props.npy', 'a'+str(scale)).split('/')[-1] 
-                prefix = scale_dir+prefix
 
                 # Export fits files with the data for Sunrise
                 gal_center = ds.arr(galprops['stars_hist_center'][idx], 'kpc')
                 export_radius = ds.arr(max(1.2*cam_dist, 1.2*cam_fov), 'kpc')
                 export_info = export_fits(ds, gal_center, export_radius, 
-                                          prefix, star_particles)
-                np.save(prefix+'_export_info.npy', export_info)
+                                          scale_dir+prefix, star_particles, 
+                                          max_level=max_level)
+
+                export_info['sim_name'] = prefix.split('_')[0]
+                export_info['scale'] = scale
+                export_info['halo_id'] = prefix.split('_')[1].replace('halo','')
+                np.save(scale_dir+prefix+'_export_info.npy', export_info)
