@@ -8,7 +8,7 @@ from glob import glob
 import numpy as np
 import shutil
 import pyfits  
-
+import pdb
 
 def parse():
     '''
@@ -641,7 +641,7 @@ def make_configs(run_dir, imp_dir, run_name, short,
     files += (imp_dir+'/export/input/filters_restframe'),
     files += (imp_dir+'/export/input/filters_restframe_short'),
 
-    var_dicts = {'sfrhist':sfrhist, 'mcrx':mcrx, 
+    var_dicts = {'sfrhist':sfrhist, 'mcrx':mcrx, 'broadbandz':broadband,
                  'broadband':broadband} #,'runSunrise':pbs}
 
     sfrhist['translate_origin'] = str(center).strip('[]')
@@ -667,10 +667,10 @@ def make_configs(run_dir, imp_dir, run_name, short,
                         newline = k.ljust(pad)+' '
                         newline+=str(v)
                         text += newline+'\n'
-                        used_keys += k,
+                        used_keys += k
                         break
-                    else:
-                        text += line
+                else:
+                    text += line
             else:
                 text += line
 
@@ -694,12 +694,14 @@ def make_configs(run_dir, imp_dir, run_name, short,
 
 
 def rep_text(text, run_dir, imp_dir, run_name, 
-             short, rep_dict, redshift,
+             short, config_dict, redshift,
              skip_calzetti, short_broadband,
              skip_idl):
     '''
     Replace environment vars in .sh and .pbs files
     '''
+    rep_dict = config_dict.copy()
+
     rep_dict.setdefault('SHORTNAME',short)
     rep_dict.setdefault('RUN_DIR',run_dir)
     rep_dict.setdefault('RUNDIR',run_dir)
