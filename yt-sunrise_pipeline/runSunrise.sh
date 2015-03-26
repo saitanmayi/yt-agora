@@ -6,12 +6,14 @@
 source /project/projectdirs/agora/scripts/activate_yt-agora.sh
 
 RUN_DIR=$(pwd)
-export RUN_DIR="$RUN_DIR"   # overwritten by setupSunriseRun.py if needed
-export SUNRISE_DIR="$RUN_DIR/sunrise"
-export INPUT_DIR="$RUN_DIR/input"
-export OUTPUT_DIR="$RUN_DIR/output"
+export RUN_DIR=$RUN_DIR   # overwritten by setupSunriseRun.py if needed
+export SUNRISE_DIR=$RUN_DIR/sunrise
+export INPUT_DIR=$RUN_DIR/input
+export OUTPUT_DIR=$RUN_DIR/output
 
-export IMPRESSION="$IMPRESSION" # overwritten by setupSunriseRun.py if needed
+export IMPRESSION=$IMPRESSION # overwritten by setupSunriseRun.py if needed
+export BLACKBOX=$BLACKBOX # overwritten by setupSunriseRun.py if needed
+export IDL_PATH=$AGORA_PIPE_INSTALL/packages/astron_idl/pro:$BLACKBOX:$IDL_PATH
 
 SKIPCALZETTI=True
 SKIPIDL=True
@@ -167,10 +169,9 @@ rm temp.py
 if [ "$SKIPIDL" != "True" ]
 then
     module load idl
-    cd /u/cmoody3/code/moody_blackbox
+    cd $BLACKBOX
     ls $OUTPUT_DIR/broadbandz*fits | sort > sim_filenames.cat 
-    export IDL_PATH=+/u/cmoody3/code/astron/:/u/cmoody3/code/moody_blackbox
-    timeout3 -t 1800 -d 10 -i 10 idl /u/cmoody3/code/moody_blackbox/sim_call.pro -queue
+    timeout3 -t 1800 -d 10 -i 10 idl $BLACKBOX/sim_call.pro -queue
     cd $OUTPUT_DIR
     tar -zcvf images.tar.gz images/
 fi
@@ -255,6 +256,9 @@ convert compositeb.png -gravity northwest -annotate 0x0+30+290  "dark matter" co
 convert compositeb.png -gravity northwest -annotate 0x0+330+290 "dark matter" compositeb.png
 convert compositeb.png -gravity northwest -annotate 0x0+30+570  "dark matter 2mpc comoving" compositeb.png
 convert compositeb.png -gravity northwest -annotate 0x0+340+570 "gas phase" compositeb.png
+
+
+#CLEAN UP
 
 #now remove the CANDLS images and rgb images
 #rm -rdf images

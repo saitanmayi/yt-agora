@@ -8,6 +8,7 @@ from glob import glob
 import numpy as np
 from collections import OrderedDict
 
+
 if __name__ != "__main__":
     from yt.analysis_modules.sunrise_export import sunrise_octree_exporter
     from yt.analysis_modules.halo_finding.halo_objects import RockstarHaloList 
@@ -437,8 +438,7 @@ if __name__ == "__main__":
         for ds in reversed(ts): 
 
             scale = round(1.0/(ds.current_redshift+1.0),4)
-            if scale not in galprops['scale']:
-                continue
+            if scale not in galprops['scale']: continue
 
             idx = np.argwhere(galprops['scale'] == scale)[0][0]
 
@@ -465,7 +465,13 @@ if __name__ == "__main__":
                 plots_dir = scale_dir+'/yt_plots/'
                 if yt.is_root():
                     if not os.path.exists(plots_dir): os.makedirs(plots_dir)
-                gal_center = ds.arr(galprops['stars_hist_center'][idx], 'kpc')
+
+                gal_center = galprops['stars_hist_center'][idx]
+                if np.all(gal_center):
+                    gal_center = ds.arr(gal_center, 'kpc')
+                else:
+                    continue
+    
                 halo_file = get_halo_file(rockstar_out_dir, scale)
                 plot_particles(plots_dir+prefix, ds, gal_center, cameras, 
                                dm_particles=dm_particles, 
@@ -482,20 +488,23 @@ if __name__ == "__main__":
 #            for ds in reversed(ts): # comment line above and uncomment this to debug on latest snaps
 
                 scale = round(1.0/(ds.current_redshift+1.0),4)
-                if scale not in galprops['scale']:
-                    continue
+                if scale not in galprops['scale']: continue
 
                 idx = np.argwhere(galprops['scale'] == scale)[0][0]
                 scale_dir = out_dir+'a'+str(scale)+'/'
                 prefix = galprops_file.replace('galaxy_props.npy', 'a'+str(scale)).split('/')[-1] 
 
                 # Export fits files with the data for Sunrise
-                gal_center = ds.arr(galprops['stars_hist_center'][idx], 'kpc')
+                gal_center = galprops['stars_hist_center'][idx]
+                if np.all(gal_center):
+                    gal_center = ds.arr(gal_center, 'kpc')
+                else:
+                    continue
+               
                 export_radius = ds.arr(max(1.2*cam_dist, 1.2*cam_fov), 'kpc')
                 export_info = export_fits(ds, gal_center, export_radius, 
                                           scale_dir+prefix, star_particles, 
                                           max_level=max_level)
-
                 export_info['sim_name'] = prefix.split('_')[0]
                 export_info['scale'] = scale
                 export_info['halo_id'] = prefix.split('_')[1].replace('halo','')

@@ -92,7 +92,7 @@ def parse():
     parser.add_argument('--skip_calzetti', action='store_true', default=False,
                         help='Skip the Calzetti attenuation step')
     
-    parser.add_argument('--skip_idl', action='store_true', default=True,
+    parser.add_argument('--skip_idl', action='store_true', default=False,
                         help='Skip IDL dependent blackbox step')
     
     parser.add_argument('--submit', action='store_true', default=False,
@@ -100,6 +100,9 @@ def parse():
     
     parser.add_argument('--impression_dir', default='$IMPRESSION',
                         help="Path to Chris Moody's impression package" )
+
+    parser.add_argument('--blackbox_dir', default='$BLACKBOX',
+                        help="Path to Chris Moody's blackbox package" )
     
     parser.add_argument('--sunrise_dir', default='$SUNRISE_DIR',
                         help='Path to Sunrise executables.')
@@ -250,8 +253,8 @@ abbreviations = {'allrays':'A', 'skipir':'I', 'aux':'X',
 def setup_run(fits_file, info_file, args,  mcrx=None, sfrhist=None, 
               broadband=None, pbs=None, parameter_set_names=None, 
               indir=os.getcwd(), sunrise_dir=None, imp_dir=None, 
-              overwrite=False, submit=False, ffov=None, dryrun=False, 
-              min_age=None, max_age=None, fmass=None, fism_temp=None, 
+              blackbox_dir=None, overwrite=False, submit=False, ffov=None,
+              dryrun=False, min_age=None, max_age=None, fmass=None, fism_temp=None, 
               fmetallicity=None, random_cameras=None, skip_calzetti=False, 
               limit_cameras=None, cut_radius=None, skip_idl=False, fovcam=None, 
               short_broadband=False, moviecam=False):
@@ -348,8 +351,7 @@ def setup_run(fits_file, info_file, args,  mcrx=None, sfrhist=None,
     if dryrun: return
     copy_fits = min_age is not None or max_age is not None \
         or fism_temp is not None or cut_radius is not None
-    make_paths(run_dir, fits_file, sunrise_dir, imp_dir,
-               copy_fits=copy_fits)
+    make_paths(run_dir, fits_file, sunrise_dir, copy_fits=copy_fits)
 
     # Modify data if required
     if cut_radius is not None:
@@ -377,8 +379,8 @@ def setup_run(fits_file, info_file, args,  mcrx=None, sfrhist=None,
                        limit_cameras=limit_cameras,
                        halo_id=info['halo_id'] )
 
-    make_configs(run_dir, imp_dir, run_name, short, sfrhist, mcrx,
-                 broadband, pbs, scale, center, skip_calzetti,
+    make_configs(run_dir, imp_dir, blackbox_dir, run_name, short, mcrx,
+                 sfrhist, broadband, pbs, scale, center, skip_calzetti,
                  skip_idl=skip_idl, short_broadband=short_broadband)
 
     # Copy misc files to the sync directory
@@ -460,7 +462,7 @@ def abbr_function(config,key,value):
     return c,k,v
 
 
-def make_paths(run_dir, fits_file, sunrise_dir, imp_dir, copy_fits=False):
+def make_paths(run_dir, fits_file, sunrise_dir, copy_fits=False):
 
     empty_dirs = [run_dir, run_dir+'/input', run_dir+'/output']#, run_dir+'/sync']
     for path in empty_dirs:
@@ -620,8 +622,8 @@ def modify_cameras(run_dir,ffov=None,fovcam=None,limit_cameras=None,
     np.savetxt(camera_file,camdata)    
 
 
-def make_configs(run_dir, imp_dir, run_name, short, 
-                 sfrhist, mcrx, broadband, pbs, scale, center,
+def make_configs(run_dir, imp_dir, blackbox_dir, run_name, short, 
+                 mcrx, sfrhist, broadband, pbs, scale, center,
                  skip_calzetti=False, skip_idl=False,
                  short_broadband=False):
     '''
@@ -685,15 +687,15 @@ def make_configs(run_dir, imp_dir, run_name, short,
         else:    
             fh = open(run_dir+'/input/'+config_base,'w')
 
-        text = rep_text(text, run_dir, imp_dir, run_name, 
-                        short, config_dict, (1.0/scale)-1.0,
+        text = rep_text(text, run_dir, imp_dir, blackbox_dir,  
+                        run_name, short, config_dict, (1.0/scale)-1.0,
                         skip_calzetti, short_broadband,
                         skip_idl)
         fh.write(text)
         fh.close()
 
 
-def rep_text(text, run_dir, imp_dir, run_name, 
+def rep_text(text, run_dir, imp_dir, blackbox_dir, run_name, 
              short, config_dict, redshift,
              skip_calzetti, short_broadband,
              skip_idl):
@@ -706,6 +708,7 @@ def rep_text(text, run_dir, imp_dir, run_name,
     rep_dict.setdefault('RUN_DIR',run_dir)
     rep_dict.setdefault('RUNDIR',run_dir)
     rep_dict.setdefault('IMPRESSION',imp_dir)
+    rep_dict.setdefault('BLACKBOX',blackbox_dir)
     rep_dict.setdefault('FULLNAME',run_name)
     rep_dict.setdefault('WCL','86300') #just short of 24 hours
     rep_dict.setdefault('PBS_NCPUS','12') 
@@ -757,6 +760,8 @@ if __name__ == "__main__":
     input_dir = args['input_dir']
     impression_dir = os.path.expandvars(args['impression_dir'])
     impression_dir = os.path.abspath(impression_dir)
+    blackbox_dir = os.path.expandvars(args['blackbox_dir'])
+    blackbox_dir = os.path.abspath(blackbox_dir)
     sunrise_dir = os.path.expandvars(args['sunrise_dir'])
     sunrise_dir = os.path.abspath(sunrise_dir)
 
@@ -811,7 +816,7 @@ if __name__ == "__main__":
                 try:
                     setup_run(fits_file, info_file, args, mcrx, sfrhist, broadband, 
                               pbs, args['parameter_set'], this_in_dir, 
-                              sunrise_dir, impression_dir, 
+                              sunrise_dir, impression_dir,  blackbox_dir,
                               args['overwrite'], args['submit'], args['ffov'], 
                               args['dryrun'], args['min_age'], args['max_age'], 
                               args['fmass'], args['fism_temp'], args['fmetallicity'], 
@@ -824,7 +829,7 @@ if __name__ == "__main__":
             else:
                 setup_run(fits_file, info_file, args, mcrx, sfrhist, broadband, 
                           pbs, args['parameter_set'], this_in_dir, 
-                          sunrise_dir, impression_dir, 
+                          sunrise_dir, impression_dir, blackbox_dir,
                           args['overwrite'], args['submit'], args['ffov'], 
                           args['dryrun'], args['min_age'], args['max_age'], 
                           args['fmass'], args['fism_temp'], args['fmetallicity'], 
