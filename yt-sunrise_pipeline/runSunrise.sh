@@ -77,7 +77,7 @@ pkill -9 free
 # Make an aux.fits file
 cp mcrx.fits aux.fits
 echo "
-import astropy.io.fits as pf
+import pyfits as pf
 import numpy as np
 
 fh=pf.open('mcrx.fits')
@@ -94,7 +94,12 @@ for i in range(cams):
             pass
 extname='GRIDSTRUCTURE'
 img,h = pf.getdata('aux.fits',extname,header=True)
-dat = np.ones(1,dtype=img.dtype)
+cols = []
+for i in range(len(img.names)):
+     col = pf.Column(name=img.names[i], format=img.formats[i], array=[img[0][i]])
+     cols.append(col)
+dat = pf.FITS_rec.from_columns(cols)
+dat[0] = np.ones(1,dtype=img.dtype)[0]
 pf.update('aux.fits',dat,extname=extname,header=h)
 " > aux.py
 sleep 1
@@ -107,7 +112,7 @@ rm mcrx-*.fits
 if [ "$SKIPCALZETTI" != "True" ]
 then
     echo "Starting calzetti process"
-    seq 0.0 0.07 0.35 | parallel -j1 -u "echo calzetti {}; python  $IMPRESSION/export/input/mcrx_calzetti.py mcrx.fits {} mcrx-{}.fits"
+    seq 0.0 0.07 0.14 0.21 0.28 0.35 | parallel -j1 -u "echo calzetti {}; python  $IMPRESSION/export/input/mcrx_calzetti.py mcrx.fits {} mcrx-{}.fits"
     # wait for mcrx calzetti processes  to finish
     wait
 
@@ -125,7 +130,7 @@ echo 'Starting BROADBANDs'
 ($SUNRISE_DIR/src/broadband $INPUT_DIR/broadband.config 2>&1 >log-broadband &)
 ($SUNRISE_DIR/src/broadband $INPUT_DIR/broadbandz.config 2>&1 >log-broadbandz &)
 echo spawned normal broadbands
-for bv in 0.07 0.14 0.21 0.28 0.35
+for bv in 0.0 0.07 0.14 0.21 0.28 0.35
 do
     echo "spawning broadband calzetti: $bv"
     sed "s/mcrx.fits/mcrx-$bv.fits/g" $INPUT_DIR/broadband.config > $INPUT_DIR/broadband-$bv.config
@@ -147,7 +152,7 @@ echo "Finished BROADBANDSs"
 # Get easy access to FITS headers
 echo "
 import glob
-import astropy.io.fits as pyfits
+import pyfits
 
 for f in glob.glob('*fits') + glob.glob('../input/*fits'):
     try:
