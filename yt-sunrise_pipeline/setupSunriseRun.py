@@ -2,6 +2,8 @@
 Generate the configuration files required to run Sunrise and
 setup the Sunrise simulation directory with everything
 necessary to submit.
+
+by Miguel Rocha  - miguel@scitechanalytics.com
 '''
 import os, sys, argparse
 from glob import glob
@@ -259,15 +261,9 @@ def setup_run(fits_file, info_file, args,  mcrx=None, sfrhist=None,
               limit_cameras=None, cut_radius=None, skip_idl=False, fovcam=None, 
               short_broadband=False, moviecam=False):
     """
-    Steps:
-    - Read in sim_info (especially center)
-    - Make the run name
-    - Check to see if it already exists
-    - Mkdir/Copy all files into (sunrise/ICs/inputs/outputs/plots)
-    - Generate config/stub text (include generation date in comments)
-    - Replace text accordingly
-    - Create the PBS script
-    - Create the PBS submit command
+    Setup sunrise run directory with all input files (i.e. config files, FITS file etc ..)
+    under the input subdir. Generate the runSunrise.sh script used to run Sunrise and
+    generate images, including Candelization.
     """
 
     # Load info dic
@@ -399,7 +395,7 @@ def setup_run(fits_file, info_file, args,  mcrx=None, sfrhist=None,
 #    else:
 #        qsub = 'qsub -q gpu_long_free %s/input/pre_one_step.sh'%run_dir
     if submit:
-        print 'WARNING: Job not submitted. Automatic submittion not yet '\
+        print 'WARNING: Job not submitted. Automatic submission not yet '\
             'implemented for this system'
 #        os.system(qsub)
 #    else:

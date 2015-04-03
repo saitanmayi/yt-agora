@@ -9,6 +9,7 @@ You must run this script using MPI, on Edison the following works:
 
 Ncpus must be at least 3, 1 server, 1 reader and 1 worker/writer
 
+by Miguel Rocha  - miguel@scitechanalytics.com
 '''
 import os, sys, argparse
 import subprocess
@@ -45,7 +46,7 @@ def parse():
     
     parser.add_argument('-s', '--snap_base', nargs='+', default=['10MpcBox_csf512_'],
                         help='Base name of the snapshot files for which you want to run rockstar. '\
-                            'You can use wildcards, and provide more than one if a diferent SNAP_BASE '\
+                            'You can use wild cards, and provide more than one if a different SNAP_BASE '\
                             'is to be used for each of the provided SIM_DIRS')
     
     parser.add_argument('--particle_types', nargs='+', default=["darkmatter"],
@@ -106,7 +107,7 @@ def run_rockstar(sim_dir, snap_base='*', particle_types=["darkmatter"],
          Simulation directory to be analyzed
 
     snap_base : str
-         Snapshot files to be analyzed. You can use wildcards in SNAP_BASE
+         Snapshot files to be analyzed. You can use wild cards in SNAP_BASE
          to select a set of snapshots that match a given pattern
 
     particle_types: str list/array
@@ -238,7 +239,7 @@ def run_rockstar(sim_dir, snap_base='*', particle_types=["darkmatter"],
     MPI.COMM_WORLD.barrier()
 
     if MPI.COMM_WORLD.Get_rank()==0:
-        print 'Succefully finished Rockstar analysis in ', sim_dir
+        print 'Successfully finished Rockstar analysis in ', sim_dir
         print
 
 
@@ -272,7 +273,7 @@ def run_merger_trees(rockstar_out_dir, rockstar_src_dir="$ROCKSTAR_DIR",
     print cmd_output
     os.chdir(owd)
     
-    print 'Succefully generated merger trees in %s/trees' % (rockstar_out_dir)
+    print 'Successfully generated merger trees in %s/trees' % (rockstar_out_dir)
     print 
 
 

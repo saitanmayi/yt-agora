@@ -1,6 +1,12 @@
 #!/bin/bash 
 # Run Sunrise and generate CANDELized images
+#
+# This script was based on Chris Moody's one_step.sh script
+# which can be found in the link below 
+# https://bitbucket.org/juxtaposicion/impression/src/4ee0d9116c56a18900e4b048989cea587adc4ff0/export/input/one_step.sh?at=default
 # 
+# by Miguel Rocha  - miguel@scitechanalytics.com
+
 
 # Set environment
 source /project/projectdirs/agora/scripts/activate_yt-agora.sh
@@ -46,7 +52,7 @@ cd $OUTPUT_DIR
 rm *tmp*
 
 # Run SFRHIST
-if [ ! -f broadband.fits ]
+if [ ! -f sfrhist.fits ]
     then
     echo 'No broadband found - running sfrhist'
     # modify star velocities
@@ -102,10 +108,9 @@ dat = pf.FITS_rec.from_columns(cols)
 dat[0] = np.ones(1,dtype=img.dtype)[0]
 pf.update('aux.fits',dat,extname=extname,header=h)
 
-" > aux.py
-sleep 1
-python aux.py
-rm aux.py
+" > $INPUT_DIR/aux.py
+sleep 3
+python $INPUT_DIR/aux.py
 
 rm mcrx-*.fits
 
@@ -166,20 +171,21 @@ for f in glob.glob('*fits') + glob.glob('../input/*fits'):
         print ' '
         
     except:
-        continue " > temp.py
+        continue " > $INPUT_DIR/printheaders.py
 
-python temp.py > data-fits_headers
-rm temp.py
+python $INPUT_DIR/printheaders.py > data-fits_headers
 
 # Run the blackbox
 if [ "$SKIPIDL" != "True" ]
 then
+    echo 'Running the blackbox'
     module load idl
     cd $BLACKBOX
     ls $OUTPUT_DIR/broadbandz*fits | sort > sim_filenames.cat 
     timeout3 -t 1800 -d 10 -i 10 idl $BLACKBOX/sim_call.pro -queue
     cd $OUTPUT_DIR
     tar -zcvf images.tar.gz images/
+    echo 'Done with the blackbox'
 fi
 
 # Make the RGB images and tar them up

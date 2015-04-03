@@ -5,6 +5,8 @@ Most Massive Progenitor Branch (MMPB) properties.
 
 The last snapshot's Rockstar catalogs are used to find the host halo and
 the Consistent Merger Trees for the MMPB.  
+
+by Miguel Rocha  - miguel@scitechanalytics.com
 '''
 import os, sys, argparse
 import subprocess
@@ -90,7 +92,7 @@ def cat_and_generateIrate(snap_number, sim_dir, rockstar_out_dir, out_dir):
         print cmd_output
         sys.exit(1)
         
-    print '\nSuccesfully generated IRATE catalog\n'
+    print '\nSuccessfully generated IRATE catalog\n'
     return irate_file
 
 if __name__ == "__main__":
@@ -162,7 +164,7 @@ if __name__ == "__main__":
         if cmd_output != 0: print cmd_output
         mmpb_file  = '%s/%s_halo%d_mmpb_props'%(out_dir, sim_dir.split('/')[-1], halo.id)
 
-        print '\nSuccefully found host halo and its MMPB properties'
+        print '\nSuccessfully found host halo and its MMPB properties'
         print 'Saving MMPB properties to ',mmpb_file
         np.save(mmpb_file, halo_past_props)
         
